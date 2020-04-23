@@ -5,6 +5,22 @@ import numpy as np
 
 import pwcnet
 
+def get_files(path):
+    # Read a folder, return the complete path
+    ret = []
+    for root, dirs, files in os.walk(path):
+        for filespath in files:
+            ret.append(os.path.join(root, filespath))
+    return ret
+
+def get_jpgs(path):
+    # Read a folder, return the image name
+    ret = []
+    for root, dirs, files in os.walk(path):
+        for filespath in files:
+            ret.append(filespath)
+    return ret
+
 def create_pwcnet(modelpath):
     # Initialize the network
     flownet = pwcnet.PWCNet().eval()
@@ -33,25 +49,43 @@ def visualize_img(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)                      # H, W, C
     return img
 
+def warp(imgpath1, imgpath2):
+    # Read images
+    img1 = read_img(imgpath1).cuda()
+    img2 = read_img(imgpath2).cuda()
+    # For loop training
+    opt_1_to_2 = pwcnet.PWCEstimate(flownet, img2, img1, drange = True, reshape = True)
+    warped_img = pwcnet.PWCNetBackward(img1, opt_1_to_2)            # range: [0, 1]
+    # Visualize images
+    warped_img = visualize_img(warped_img)
+    return warped_img
+
 if __name__ == '__main__':
-    
+
     # Define PWC-Net
     modelpath = './pwcNet-default.pytorch'
     flownet = create_pwcnet(modelpath)
     flownet = flownet.cuda()
 
-    # Read images
-    img1 = read_img('./00015.jpg').cuda()
-    img2 = read_img('./00020.jpg').cuda()
-    print(img1.shape)
-    print(img2.shape)
-    
-    # For loop training
-    opt_1_to_2 = pwcnet.PWCEstimate(flownet, img2, img1, drange = True, reshape = True)
-    print(opt_1_to_2.shape)
-    warped_img = pwcnet.PWCNetBackward(img1, opt_1_to_2)            # range: [0, 1]
-    print(warped_img.shape)
-    
-    # Visualize images
-    warped_img = visualize_img(warped_img)
-    cv2.imwrite('warped_img.png', warped_img)
+    # Warp
+    single_folder = True
+    if single_folder:
+        # Define imglist
+        folderpath = ''
+        imglist = get_files(folderpath)
+        # Warp images
+        for i in range(len(imglist) - 1):
+            imgpath1 = imglist[i]
+            imgpath2 = imglist[i + 1]
+            warped_img = warp(imgpath1, imgpath2)
+    else:
+        # Define imglist
+        folderpath1 = ''
+        folderpath2 = ''
+        imglist1 = get_files(folderpath1)
+        imglist2 = get_files(folderpath2)
+        # Warp images
+        for i in range(len(imglist)):
+            imgpath1 = imglist1[i]
+            imgpath2 = imglist2[i]
+            warped_img = warp(imgpath1, imgpath2)
