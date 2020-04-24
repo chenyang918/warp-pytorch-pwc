@@ -41,8 +41,8 @@ if __name__ == '__main__':
     flownet = flownet.cuda()
 
     # Read images
-    path1 = './00015.jpg'
-    path2 = './00020.jpg'
+    path1 = './eg/00015.jpg'
+    path2 = './eg/00020.jpg'
     img1 = read_img(path1).cuda()
     img2 = read_img(path2).cuda()
     print(img1.shape)
@@ -55,5 +55,9 @@ if __name__ == '__main__':
     print(warped_img.shape)
     
     # Visualize images
+    img1 = cv2.imread(path1)
+    img2 = cv2.imread(path2)
     warped_img = visualize_img(warped_img)
-    cv2.imwrite('warped_img.png', warped_img)
+    visualize_img = np.concatenate((img1, img2, warped_img), axis = 1)
+    cv2.imshow('show', visualize_img)
+    cv2.waitKey(0)
